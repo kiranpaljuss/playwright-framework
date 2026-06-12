@@ -1,55 +1,78 @@
+import { Locator, Page } from '@playwright/test';
+
 class SauceDemoPage {
-  get usernameInput (): string {
-    return '#user-name';
+  private readonly page: Page;
+
+  constructor (page: Page) {
+    this.page = page;
   }
 
-  get passwordInput (): string {
-    return '#password';
+  get usernameInput (): Locator {
+    return this.page.getByTestId('username');
   }
 
-  get loginButton (): string {
-    return '#login-button';
+  get passwordInput (): Locator {
+    return this.page.getByTestId('password');
   }
 
-  get inventoryList (): string {
-    return '.inventory_list';
+  get loginButton (): Locator {
+    return this.page.getByTestId('login-button');
   }
 
-  get inventoryItem (): string {
-    return '.inventory_item';
+  get inventoryList (): Locator {
+    return this.page.getByTestId('inventory-list');
   }
 
-  get inventoryItemName (): string {
-    return '.inventory_item_name';
+  get inventoryItems (): Locator {
+    return this.page.getByTestId('inventory-item');
   }
 
-  get addToCartButton (): string {
-    return 'button:has-text("Add to cart")';
+  get inventoryItemNames (): Locator {
+    return this.page.getByTestId('inventory-item-name');
   }
 
-  get shoppingCartBadge (): string {
-    return '.shopping_cart_badge';
+  get shoppingCartBadge (): Locator {
+    return this.page.getByTestId('shopping-cart-badge');
   }
 
-  get shoppingCartLink (): string {
-    return '.shopping_cart_link';
+  get shoppingCartLink (): Locator {
+    return this.page.getByTestId('shopping-cart-link');
   }
 
-  get cartItemName (): string {
-    return '.cart_item .inventory_item_name';
+  get cartList (): Locator {
+    return this.page.getByTestId('cart-list');
   }
 
-  get continueShoppingButton (): string {
-    return '#continue-shopping';
+  get cartItemNames (): Locator {
+    return this.cartList.getByTestId('inventory-item-name');
   }
 
-  get productSortDropdown (): string {
-    return '.product_sort_container';
+  get continueShoppingButton (): Locator {
+    return this.page.getByTestId('continue-shopping');
   }
 
-  get inventoryItemPrice (): string {
-    return '.inventory_item_price';
+  get checkoutButton (): Locator {
+    return this.page.getByTestId('checkout');
+  }
+
+  get productSortDropdown (): Locator {
+    return this.page.getByTestId('product-sort-container');
+  }
+
+  get inventoryItemPrices (): Locator {
+    return this.page.getByTestId('inventory-item-price');
+  }
+
+  productCardByName (productName: string): Locator {
+    return this.inventoryItems.filter({
+      has: this.page.getByTestId('inventory-item-name').filter({ hasText: productName })
+    });
+  }
+
+  addToCartButtonIn (productCard: Locator, productName: string): Locator {
+    const productSlug = productName.trim().toLowerCase().replace(/\s+/g, '-');
+    return productCard.getByTestId(`add-to-cart-${productSlug}`);
   }
 }
 
-export default new SauceDemoPage();
+export default SauceDemoPage;
