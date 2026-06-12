@@ -29,6 +29,7 @@ export default defineConfig({
     addMetadata: 'object'
   }]],
   use: {
+    testIdAttribute: 'data-test',
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure',
     video: 'retain-on-failure'
