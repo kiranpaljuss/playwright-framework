@@ -1,0 +1,30 @@
+{
+  "name": "pppt-playwright",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "bddgen": "bddgen test",
+    "test": "yarn bddgen && playwright test",
+    "test:headed": "yarn bddgen && playwright test --headed",
+    "test:grep": "yarn bddgen && playwright test --grep",
+    "test:grep:headed": "yarn bddgen && playwright test --headed --grep",
+    "report:cucumber": "node scripts/generate-cucumber-report.mjs",
+    "test:cucumber": "yarn bddgen && playwright test && yarn report:cucumber"
+  },
+  "dependencies": {
+    "@playwright/test": "^1.60.0",
+    "eslint": "^10.4.1",
+    "eslint-plugin-jsonc": "^3.2.0",
+    "eslint-plugin-playwright": "^2.10.4",
+    "playwright": "^1.60.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^25.9.3",
+    "@typescript-eslint/parser": "^8.61.0",
+    "dotenv": "^17.4.2",
+    "multiple-cucumber-html-reporter": "^4.0.0",
+    "playwright-bdd": "^9.0.0",
+    "typescript": "^6.0.3"
+  }
+}
