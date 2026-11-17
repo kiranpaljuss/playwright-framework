@@ -12,6 +12,7 @@
     "test:chromium": "playwright test --project=chromium",
     "test:api": "playwright test --project=api",
     "test:a11y": "playwright test --project=chromium --grep @a11y",
+    "test:local": "BASE_URL=http://localhost:4200 API_BASE_URL=http://localhost:8091 playwright test",
     "test:headed": "playwright test --project=chromium --headed",
     "test:smoke": "playwright test --grep @smoke",
     "test:grep": "playwright test --grep",
@@ -20,7 +21,9 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc --noEmit",
-    "validate": "yarn lint && yarn typecheck"
+    "validate": "yarn lint && yarn typecheck",
+    "shop:up": "./shop/start.sh",
+    "shop:down": "docker compose -f shop/docker-compose.yml down -v"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",
