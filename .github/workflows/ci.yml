@@ -50,7 +50,7 @@ jobs:
         run: yarn report:cucumber
       - name: Upload reports
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: reports-${{ matrix.browser }}
           path: |
@@ -70,7 +70,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: reports-chromium
           path: site
@@ -89,8 +89,8 @@ jobs:
             <li><a href="playwright/index.html">Playwright HTML report (with traces for failures)</a></li>
           </ul>
           HTML
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: site
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
