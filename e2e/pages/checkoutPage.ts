@@ -1,4 +1,5 @@
 import { Locator, Page } from '@playwright/test';
+import { Header } from './components/header';
 
 export interface CustomerDetails {
   firstName: string;
@@ -8,6 +9,7 @@ export interface CustomerDetails {
 
 /** Covers the three checkout steps: your information, overview, and complete. */
 export class CheckoutPage {
+  readonly header: Header;
   readonly firstNameInput: Locator;
   readonly lastNameInput: Locator;
   readonly postalCodeInput: Locator;
@@ -22,6 +24,7 @@ export class CheckoutPage {
   readonly completeHeader: Locator;
 
   constructor (page: Page) {
+    this.header = new Header(page);
     this.firstNameInput = page.getByTestId('firstName');
     this.lastNameInput = page.getByTestId('lastName');
     this.postalCodeInput = page.getByTestId('postalCode');

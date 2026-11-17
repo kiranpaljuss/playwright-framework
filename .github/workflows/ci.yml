@@ -43,19 +43,13 @@ jobs:
           cache: yarn
       - run: yarn install --frozen-lockfile
       - run: npx playwright install --with-deps ${{ matrix.browser }}
-      - run: yarn bddgen
       - run: npx playwright test --project=${{ matrix.browser }}
-      - name: Generate Cucumber HTML report
-        if: ${{ !cancelled() }}
-        run: yarn report:cucumber
-      - name: Upload reports
+      - name: Upload report
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
-          name: reports-${{ matrix.browser }}
-          path: |
-            playwright-report/
-            cucumber-report/html/
+          name: playwright-report-${{ matrix.browser }}
+          path: playwright-report/
           retention-days: 14
 
   publish-report:
@@ -72,23 +66,8 @@ jobs:
     steps:
       - uses: actions/download-artifact@v8
         with:
-          name: reports-chromium
+          name: playwright-report-chromium
           path: site
-      - name: Arrange site
-        run: |
-          mv site/cucumber-report/html site/cucumber
-          rm -rf site/cucumber-report
-          mv site/playwright-report site/playwright
-          cat > site/index.html <<'HTML'
-          <!doctype html>
-          <meta charset="utf-8">
-          <title>Playwright BDD test reports</title>
-          <h1>Latest test reports (main, Chromium)</h1>
-          <ul>
-            <li><a href="cucumber/index.html">Cucumber BDD report</a></li>
-            <li><a href="playwright/index.html">Playwright HTML report (with traces for failures)</a></li>
-          </ul>
-          HTML
       - uses: actions/upload-pages-artifact@v5
         with:
           path: site
