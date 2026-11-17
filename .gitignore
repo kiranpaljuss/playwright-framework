@@ -1,6 +1,15 @@
-node_modules
-.features-gen
-test-results
-cucumber-report
-yarn.lock
+# Dependencies
+node_modules/
+
+# Generated tests and reports
+.features-gen/
+test-results/
+playwright-report/
+blob-report/
+cucumber-report/
+
+# Local environment
 .env
+
+# OS / editor
+.DS_Store
