@@ -23,3 +23,7 @@ updates:
     directory: /shop
     schedule:
       interval: weekly
+    ignore:
+      # Stay on the database major version the shop's maintainers use (10.6).
+      - dependency-name: yobasystems/alpine-mariadb
+        update-types: [version-update:semver-major]
