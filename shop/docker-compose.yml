@@ -29,7 +29,7 @@ services:
 
   # Serves the API. Replaces the project's prebuilt web image, which is ARM-only (see nginx.conf).
   web:
-    image: nginx:1.27-alpine
+    image: nginx:1.31-alpine
     ports:
       - 8091:80
     volumes:
