@@ -27,10 +27,14 @@ services:
       - 4200:4200
     command: bash -c "ng serve --host 0.0.0.0 --port 4200"
 
+  # Serves the API. Replaces the project's prebuilt web image, which is ARM-only (see nginx.conf).
   web:
-    image: testsmith/practice-software-testing-web:latest
+    image: nginx:1.27-alpine
     ports:
       - 8091:80
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - laravel-app-code:/var/www:ro
     depends_on:
       - laravel-api
 
