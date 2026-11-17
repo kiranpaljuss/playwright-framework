@@ -2,7 +2,7 @@
   "name": "playwright-framework",
   "version": "1.0.0",
   "private": true,
-  "description": "End-to-end UI, API and accessibility test automation framework built with Playwright and TypeScript",
+  "description": "UI, API and accessibility test automation for the Practice Software Testing demo shop, built with Playwright and TypeScript",
   "license": "MIT",
   "engines": {
     "node": ">=24"

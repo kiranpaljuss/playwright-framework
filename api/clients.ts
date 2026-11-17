@@ -1,96 +1,96 @@
 import { APIRequestContext, APIResponse } from '@playwright/test';
+import { NewCustomer } from './testData';
 
 /**
- * Thin clients for each area of the DummyJSON API, the API-testing equivalent of page objects.
- * They return the raw APIResponse so tests can assert on status codes and headers,
- * as well as parse the body against a schema.
+ * Thin clients for each area of the Practice Software Testing API, the API-testing
+ * equivalent of page objects. They return the raw APIResponse so tests can assert on
+ * status codes as well as parse the body against a schema. The UI tests reuse them
+ * to set up data (accounts, baskets) and to verify results (orders) on the server.
  */
 
-export interface LoginRequest {
-  username: string;
-  password: string;
-  expiresInMins?: number;
-}
-
-export interface CartItemRequest {
-  id: number;
-  quantity: number;
-}
+const bearer = (token: string): Record<string, string> => ({ Authorization: `Bearer ${token}` });
 
 export class AuthClient {
   constructor (private readonly request: APIRequestContext) {}
 
-  login (credentials: LoginRequest): Promise<APIResponse> {
-    return this.request.post('/auth/login', { data: credentials });
+  register (customer: Partial<NewCustomer>): Promise<APIResponse> {
+    return this.request.post('/users/register', { data: customer });
   }
 
-  currentUser (accessToken?: string): Promise<APIResponse> {
-    const headers: Record<string, string> = accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
-    return this.request.get('/auth/me', { headers });
+  login (email: string, password: string): Promise<APIResponse> {
+    return this.request.post('/users/login', { data: { email, password } });
   }
+
+  me (token?: string): Promise<APIResponse> {
+    return this.request.get('/users/me', { headers: token ? bearer(token) : {} });
+  }
+}
+
+export interface ProductQuery {
+  page?: number;
+  sort?: 'name,asc' | 'name,desc' | 'price,asc' | 'price,desc';
+  by_brand?: string;
+  by_category?: string;
+  between?: string;
+  is_rental?: boolean;
 }
 
 export class ProductsClient {
   constructor (private readonly request: APIRequestContext) {}
 
-  get (id: number): Promise<APIResponse> {
+  list (query: ProductQuery = {}): Promise<APIResponse> {
+    return this.request.get('/products', { params: { ...query } });
+  }
+
+  get (id: string): Promise<APIResponse> {
     return this.request.get(`/products/${id}`);
   }
 
-  list (params: { limit?: number; skip?: number; select?: string[] } = {}): Promise<APIResponse> {
-    return this.request.get('/products', { params: toQuery(params) });
+  search (term: string): Promise<APIResponse> {
+    return this.request.get('/products/search', { params: { q: term } });
   }
 
-  search (query: string, params: { limit?: number } = {}): Promise<APIResponse> {
-    return this.request.get('/products/search', { params: { q: query, ...toQuery(params) } });
+  brands (): Promise<APIResponse> {
+    return this.request.get('/brands');
   }
 
-  byCategory (category: string): Promise<APIResponse> {
-    return this.request.get(`/products/category/${encodeURIComponent(category)}`, { params: { limit: 0 } });
-  }
-
-  add (product: Record<string, unknown>): Promise<APIResponse> {
-    return this.request.post('/products/add', { data: product });
-  }
-
-  update (id: number, changes: Record<string, unknown>): Promise<APIResponse> {
-    return this.request.put(`/products/${id}`, { data: changes });
-  }
-
-  delete (id: number): Promise<APIResponse> {
-    return this.request.delete(`/products/${id}`);
+  categories (): Promise<APIResponse> {
+    return this.request.get('/categories/tree');
   }
 }
 
 export class CartsClient {
   constructor (private readonly request: APIRequestContext) {}
 
-  get (id: number): Promise<APIResponse> {
-    return this.request.get(`/carts/${id}`);
+  create (): Promise<APIResponse> {
+    return this.request.post('/carts');
   }
 
-  add (userId: number, products: CartItemRequest[]): Promise<APIResponse> {
-    return this.request.post('/carts/add', { data: { userId, products } });
+  get (cartId: string): Promise<APIResponse> {
+    return this.request.get(`/carts/${cartId}`);
   }
 
-  update (id: number, products: CartItemRequest[], merge = true): Promise<APIResponse> {
-    return this.request.put(`/carts/${id}`, { data: { merge, products } });
+  addItem (cartId: string, productId: string, quantity: number): Promise<APIResponse> {
+    return this.request.post(`/carts/${cartId}`, { data: { product_id: productId, quantity } });
   }
 
-  delete (id: number): Promise<APIResponse> {
-    return this.request.delete(`/carts/${id}`);
+  updateQuantity (cartId: string, productId: string, quantity: number): Promise<APIResponse> {
+    return this.request.put(`/carts/${cartId}/product/quantity`, { data: { product_id: productId, quantity } });
+  }
+
+  removeItem (cartId: string, productId: string): Promise<APIResponse> {
+    return this.request.delete(`/carts/${cartId}/product/${productId}`);
+  }
+
+  delete (cartId: string): Promise<APIResponse> {
+    return this.request.delete(`/carts/${cartId}`);
   }
 }
 
-const toQuery = ({ select, ...rest }: { limit?: number; skip?: number; select?: string[] }): Record<string, string | number> => {
-  const query: Record<string, string | number> = {};
-  for (const [key, value] of Object.entries(rest)) {
-    if (value !== undefined) {
-      query[key] = value;
-    }
+export class InvoicesClient {
+  constructor (private readonly request: APIRequestContext) {}
+
+  list (token: string): Promise<APIResponse> {
+    return this.request.get('/invoices', { headers: bearer(token) });
   }
-  if (select) {
-    query.select = select.join(',');
-  }
-  return query;
-};
+}

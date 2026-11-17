@@ -1,28 +1,23 @@
 import { Locator, Page } from '@playwright/test';
 
-/**
- * Header shown on every authenticated page (inventory, cart, checkout).
- * Modelled as a component so each page object can compose it rather than duplicate selectors.
- */
+/** Navigation bar shown on every page. */
 export class Header {
+  readonly signInLink: Locator;
+  readonly accountMenu: Locator;
+  readonly signOutLink: Locator;
   readonly cartLink: Locator;
-  readonly cartBadge: Locator;
-  readonly menuButton: Locator;
-  readonly logoutLink: Locator;
+  readonly cartQuantity: Locator;
 
   constructor (page: Page) {
-    this.cartLink = page.getByTestId('shopping-cart-link');
-    this.cartBadge = page.getByTestId('shopping-cart-badge');
-    this.menuButton = page.getByRole('button', { name: 'Open Menu' });
-    this.logoutLink = page.getByTestId('logout-sidebar-link');
+    this.signInLink = page.getByTestId('nav-sign-in');
+    this.accountMenu = page.getByTestId('nav-menu');
+    this.signOutLink = page.getByTestId('nav-sign-out');
+    this.cartLink = page.getByTestId('nav-cart');
+    this.cartQuantity = page.getByTestId('cart-quantity');
   }
 
-  async openCart (): Promise<void> {
-    await this.cartLink.click();
-  }
-
-  async logout (): Promise<void> {
-    await this.menuButton.click();
-    await this.logoutLink.click();
+  async signOut (): Promise<void> {
+    await this.accountMenu.click();
+    await this.signOutLink.click();
   }
 }

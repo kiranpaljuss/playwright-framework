@@ -6,7 +6,7 @@ on:
   pull_request:
   workflow_dispatch:
   schedule:
-    # Nightly run against the live sites to catch regressions/drift.
+    # Nightly run against the live site to catch regressions/drift.
     - cron: '0 6 * * *'
 
 concurrency:
@@ -42,9 +42,8 @@ jobs:
           node-version-file: .nvmrc
           cache: yarn
       - run: yarn install --frozen-lockfile
-      # The login setup project always runs in Chromium, so install it alongside the matrix browser.
       - if: ${{ matrix.project != 'api' }}
-        run: npx playwright install --with-deps chromium ${{ matrix.project }}
+        run: npx playwright install --with-deps ${{ matrix.project }}
       - run: npx playwright test --project=${{ matrix.project }}
         env:
           PLAYWRIGHT_BLOB_OUTPUT_NAME: report-${{ matrix.project }}.zip

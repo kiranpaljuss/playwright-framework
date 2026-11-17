@@ -1,25 +1,25 @@
 import { Locator, Page } from '@playwright/test';
 
 export class LoginPage {
-  readonly usernameInput: Locator;
+  readonly emailInput: Locator;
   readonly passwordInput: Locator;
-  readonly loginButton: Locator;
+  readonly submitButton: Locator;
   readonly errorMessage: Locator;
 
   constructor (private readonly page: Page) {
-    this.usernameInput = page.getByTestId('username');
+    this.emailInput = page.getByTestId('email');
     this.passwordInput = page.getByTestId('password');
-    this.loginButton = page.getByTestId('login-button');
-    this.errorMessage = page.getByTestId('error');
+    this.submitButton = page.getByTestId('login-submit');
+    this.errorMessage = page.getByTestId('login-error');
   }
 
   async goto (): Promise<void> {
-    await this.page.goto('/');
+    await this.page.goto('/auth/login');
   }
 
-  async login (username: string, password: string): Promise<void> {
-    await this.usernameInput.fill(username);
+  async login (email: string, password: string): Promise<void> {
+    await this.emailInput.fill(email);
     await this.passwordInput.fill(password);
-    await this.loginButton.click();
+    await this.submitButton.click();
   }
 }
