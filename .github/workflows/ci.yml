@@ -6,7 +6,7 @@ on:
   pull_request:
   workflow_dispatch:
   schedule:
-    # Nightly run against the live demo site to catch regressions/drift.
+    # Nightly run against the live sites to catch regressions/drift.
     - cron: '0 6 * * *'
 
 concurrency:
@@ -27,14 +27,14 @@ jobs:
       - run: yarn lint
       - run: yarn typecheck
 
-  e2e:
-    name: E2E (${{ matrix.browser }})
+  test:
+    name: Tests (${{ matrix.project }})
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        browser: [chromium, firefox, webkit]
+        project: [api, chromium, firefox, webkit]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -43,20 +43,48 @@ jobs:
           cache: yarn
       - run: yarn install --frozen-lockfile
       # The login setup project always runs in Chromium, so install it alongside the matrix browser.
-      - run: npx playwright install --with-deps chromium ${{ matrix.browser }}
-      - run: npx playwright test --project=${{ matrix.browser }}
-      - name: Upload report
+      - if: ${{ matrix.project != 'api' }}
+        run: npx playwright install --with-deps chromium ${{ matrix.project }}
+      - run: npx playwright test --project=${{ matrix.project }}
+        env:
+          PLAYWRIGHT_BLOB_OUTPUT_NAME: report-${{ matrix.project }}.zip
+      - name: Upload blob report
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
-          name: playwright-report-${{ matrix.browser }}
+          name: blob-report-${{ matrix.project }}
+          path: blob-report/
+          retention-days: 7
+
+  merge-reports:
+    name: Merge reports
+    needs: test
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: yarn
+      - run: yarn install --frozen-lockfile
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: blob-report-*
+          path: all-blob-reports
+          merge-multiple: true
+      - run: npx playwright merge-reports --reporter html ./all-blob-reports
+      - name: Upload combined HTML report
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
           path: playwright-report/
           retention-days: 14
 
   publish-report:
     name: Publish report to GitHub Pages
-    needs: e2e
-    if: ${{ !cancelled() && github.ref == 'refs/heads/main' }}
+    needs: merge-reports
+    if: ${{ !cancelled() && github.ref == 'refs/heads/main' && needs.merge-reports.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       pages: write
@@ -67,7 +95,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v8
         with:
-          name: playwright-report-chromium
+          name: playwright-report
           path: site
       - uses: actions/upload-pages-artifact@v5
         with:
