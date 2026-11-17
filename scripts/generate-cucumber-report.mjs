@@ -6,18 +6,17 @@ const reportsRoot = path.resolve(process.cwd(), 'cucumber-report');
 generate({
   jsonDir: reportsRoot,
   reportPath: path.join(reportsRoot, 'html'),
-  pageTitle: 'BDD Test Report',
+  pageTitle: 'Playwright BDD Test Report',
   reportName: 'Playwright BDD - Cucumber Report',
   displayDuration: true,
   openReportInBrowser: false,
-  metadata: {
-    browser: {
-      name: 'chromium'
-    },
-    platform: {
-      name: process.platform,
-      version: process.version
-    }
+  customData: {
+    title: 'Run info',
+    data: [
+      { label: 'Platform', value: process.platform },
+      { label: 'Node.js', value: process.version },
+      { label: 'Generated', value: new Date().toUTCString() }
+    ]
   }
 });
 

@@ -1,30 +1,40 @@
 {
-  "name": "pppt-playwright",
+  "name": "playwright-framework",
   "version": "1.0.0",
   "private": true,
+  "description": "BDD test automation framework built with Playwright, playwright-bdd and TypeScript",
+  "license": "MIT",
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "bddgen": "bddgen test",
-    "test": "yarn bddgen && playwright test",
-    "test:headed": "yarn bddgen && playwright test --headed",
-    "test:grep": "yarn bddgen && playwright test --grep",
-    "test:grep:headed": "yarn bddgen && playwright test --headed --grep",
+    "test": "bddgen test && playwright test",
+    "test:chromium": "bddgen test && playwright test --project=chromium",
+    "test:headed": "bddgen test && playwright test --project=chromium --headed",
+    "test:smoke": "bddgen test && playwright test --grep @smoke",
+    "test:grep": "bddgen test && playwright test --grep",
+    "test:ui": "bddgen test && playwright test --ui",
+    "report": "playwright show-report",
     "report:cucumber": "node scripts/generate-cucumber-report.mjs",
-    "test:cucumber": "yarn bddgen && playwright test && yarn report:cucumber"
-  },
-  "dependencies": {
-    "@playwright/test": "^1.60.0",
-    "eslint": "^10.4.1",
-    "eslint-plugin-jsonc": "^3.2.0",
-    "eslint-plugin-playwright": "^2.10.4",
-    "playwright": "^1.60.0"
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "typecheck": "tsc --noEmit",
+    "validate": "yarn lint && yarn typecheck"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.65.1",
     "@types/node": "^25.9.3",
-    "@typescript-eslint/parser": "^8.61.0",
     "dotenv": "^17.4.2",
+    "eslint": "^10.4.1",
+    "eslint-plugin-jsonc": "^3.2.0",
+    "eslint-plugin-playwright": "^2.10.4",
+    "globals": "^17.0.0",
+    "jsonc-eslint-parser": "^3.3.0",
     "multiple-cucumber-html-reporter": "^4.0.0",
-    "playwright-bdd": "^9.0.0",
-    "typescript": "^6.0.3"
+    "playwright-bdd": "^9.2.1",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.61.0"
   }
 }
