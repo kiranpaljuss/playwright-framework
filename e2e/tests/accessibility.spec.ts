@@ -33,7 +33,8 @@ const pages: PageUnderTest[] = [
     knownIssues: [
       'heading-order', // Product names are <h5> after an <h4>
       'landmark-unique', // Two <nav> landmarks with no distinguishing labels
-      'list' // WCAG 1.3.1: <ul> with non-<li> children in the filters
+      'list', // WCAG 1.3.1: <ul> with non-<li> children in the filters
+      'page-has-heading-one' // Only in the v2.5 Docker image used in CI; the live site has an <h1>
     ]
   },
   {
