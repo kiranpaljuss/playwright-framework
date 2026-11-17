@@ -2,7 +2,7 @@
   "name": "playwright-framework",
   "version": "1.0.0",
   "private": true,
-  "description": "End-to-end test automation framework built with Playwright and TypeScript",
+  "description": "End-to-end UI, API and accessibility test automation framework built with Playwright and TypeScript",
   "license": "MIT",
   "engines": {
     "node": ">=24"
@@ -10,6 +10,8 @@
   "scripts": {
     "test": "playwright test",
     "test:chromium": "playwright test --project=chromium",
+    "test:api": "playwright test --project=api",
+    "test:a11y": "playwright test --project=chromium --grep @a11y",
     "test:headed": "playwright test --project=chromium --headed",
     "test:smoke": "playwright test --grep @smoke",
     "test:grep": "playwright test --grep",
@@ -21,6 +23,7 @@
     "validate": "yarn lint && yarn typecheck"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.65.1",
     "@types/node": "^24",
@@ -31,6 +34,7 @@
     "globals": "^17.0.0",
     "jsonc-eslint-parser": "^3.3.0",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.61.0"
+    "typescript-eslint": "^8.61.0",
+    "zod": "^4.6.7"
   }
 }

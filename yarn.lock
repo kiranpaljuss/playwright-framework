@@ -2,6 +2,13 @@
 # yarn lockfile v1
 
 
+"@axe-core/playwright@^4.14.0":
+  version "4.14.0"
+  resolved "https://registry.yarnpkg.com/@axe-core/playwright/-/playwright-4.14.0.tgz#a137c84ad18cf1ec17b5458f300a6e370444fbe5"
+  integrity sha512-SGUhG5PIHd2eMdpgBF2PyQLOhX+qyDR2PT4cmoS4Qk2ak+jX/rrSvst9l0PGv5WTHolKpUMvVmoHpr4cZgf1RQ==
+  dependencies:
+    axe-core "~4.14.0"
+
 "@cacheable/memory@^2.2.0":
   version "2.2.0"
   resolved "https://registry.yarnpkg.com/@cacheable/memory/-/memory-2.2.0.tgz#72aeb8b051f6d597d10ac8595b94ad8302bd2239"
@@ -276,6 +283,11 @@ ajv@^6.14.0:
     fast-json-stable-stringify "^2.0.0"
     json-schema-traverse "^0.4.1"
     uri-js "^4.2.2"
+
+axe-core@~4.14.0:
+  version "4.14.1"
+  resolved "https://registry.yarnpkg.com/axe-core/-/axe-core-4.14.1.tgz#14d8a6f3f085afd126b8b5ca1e42e50e17fb1d99"
+  integrity sha512-FHfa+lmNjQZfJz1q8wKqIDwC6DExcHt/pkjNQb09a3NPjCKg2rhu5qb2S4r76ASyFNNtuFooJpZe37OgudVGtQ==
 
 balanced-match@^4.0.2:
   version "4.0.4"
@@ -792,3 +804,8 @@ yocto-queue@^0.1.0:
   version "0.1.0"
   resolved "https://registry.yarnpkg.com/yocto-queue/-/yocto-queue-0.1.0.tgz#0294eb3dee05028d31ee1a5fa2c556a6aaf10a1b"
   integrity sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==
+
+zod@^4.6.7:
+  version "4.6.7"
+  resolved "https://registry.yarnpkg.com/zod/-/zod-4.6.7.tgz#e806cf64a7f4e37635ce9f2f52c04c3766f75e5b"
+  integrity sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg==
