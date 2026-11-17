@@ -17,3 +17,9 @@ updates:
     directory: /
     schedule:
       interval: weekly
+
+  # Keeps the pinned shop images used by CI up to date (see shop/docker-compose.yml).
+  - package-ecosystem: docker-compose
+    directory: /shop
+    schedule:
+      interval: weekly
