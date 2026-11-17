@@ -6,9 +6,8 @@ test-results/
 playwright-report/
 blob-report/
 
-# Local environment and saved login sessions
+# Local environment
 .env
-.auth/
 
 # OS / editor
 .DS_Store

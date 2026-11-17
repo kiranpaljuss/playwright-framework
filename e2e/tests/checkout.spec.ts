@@ -1,58 +1,68 @@
 import { test, expect } from '../fixtures';
-import { CheckoutPage, CustomerDetails } from '../pages/checkoutPage';
-
-const products = ['Sauce Labs Backpack', 'Sauce Labs Bike Light'];
-const customer: CustomerDetails = { firstName: 'Ada', lastName: 'Lovelace', postalCode: 'SW1A 1AA' };
+import { InvoicePageSchema } from '../../api/schemas';
 
 test.describe('Checkout', { tag: '@checkout' }, () => {
-  test.beforeEach(async ({ page, inventoryPage, cartPage }) => {
-    await inventoryPage.goto();
-    for (const product of products) {
-      await inventoryPage.addToCart(product);
-    }
-    await inventoryPage.header.openCart();
-    await cartPage.checkoutButton.click();
-    await expect(page).toHaveURL(/\/checkout-step-one\.html$/);
-  });
+  test('signed-in customer places an order, and the invoice is created on the server', { tag: '@smoke' }, async ({ checkoutPage, seedCart, invoicesApi, customerToken, inStockProducts: [first, second] }) => {
+    await seedCart([{ product: first, quantity: 2 }, { product: second, quantity: 1 }]);
+    const expectedTotal = first.price * 2 + second.price;
+    await checkoutPage.goto();
 
-  test('complete a purchase end to end', { tag: '@smoke' }, async ({ page, checkoutPage }) => {
-    await checkoutPage.fillCustomerDetails(customer);
-
-    await test.step('order overview lists the products', async () => {
-      await expect(page).toHaveURL(/\/checkout-step-two\.html$/);
-      await expect(checkoutPage.itemNames).toHaveText(products);
+    await test.step('complete the checkout steps', async () => {
+      await checkoutPage.proceedToPayment();
+      await checkoutPage.pay('cash-on-delivery');
     });
 
-    await test.step('totals add up', async () => {
-      const prices = (await checkoutPage.itemPrices.allTextContents()).map(CheckoutPage.parseAmount);
-      const subtotal = CheckoutPage.parseAmount(await checkoutPage.subtotalLabel.innerText());
-      const tax = CheckoutPage.parseAmount(await checkoutPage.taxLabel.innerText());
-      const total = CheckoutPage.parseAmount(await checkoutPage.totalLabel.innerText());
-
-      expect(subtotal).toBeCloseTo(prices.reduce((sum, price) => sum + price, 0), 2);
-      expect(total).toBeCloseTo(subtotal + tax, 2);
+    const invoiceNumber = await test.step('website confirms the order', async () => {
+      // Placing the order is a server round trip, so allow longer than the default timeout.
+      await expect(checkoutPage.orderConfirmation).toBeVisible({ timeout: 15_000 });
+      return checkoutPage.invoiceNumber();
     });
 
-    await test.step('finishing the order confirms it and empties the cart', async () => {
-      await checkoutPage.finishButton.click();
+    await test.step('API has a matching invoice', async () => {
+      const { data } = InvoicePageSchema.parse(await (await invoicesApi.list(customerToken)).json());
+      const invoice = data.find(i => i.invoice_number === invoiceNumber);
 
-      await expect(page).toHaveURL(/\/checkout-complete\.html$/);
-      await expect(checkoutPage.completeHeader).toHaveText('Thank you for your order!');
-      await expect(checkoutPage.header.cartBadge).toBeHidden();
+      expect(invoice, `invoice ${invoiceNumber} exists`).toBeDefined();
+      expect(invoice!.payment.payment_method).toBe('cash-on-delivery');
+      expect(invoice!.total).toBeCloseTo(expectedTotal, 2);
+      expect(invoice!.invoicelines.map(({ product_id, quantity }) => ({ product_id, quantity }))).toEqual(expect.arrayContaining([
+        { product_id: first.id, quantity: 2 },
+        { product_id: second.id, quantity: 1 }
+      ]));
     });
   });
 
-  const missingFields: { field: keyof CustomerDetails; error: string }[] = [
-    { field: 'firstName', error: 'Error: First Name is required' },
-    { field: 'lastName', error: 'Error: Last Name is required' },
-    { field: 'postalCode', error: 'Error: Postal Code is required' }
-  ];
-
-  for (const { field, error } of missingFields) {
-    test(`checkout requires ${field}`, { tag: '@regression' }, async ({ checkoutPage }) => {
-      await checkoutPage.fillCustomerDetails({ ...customer, [field]: '' });
-
-      await expect(checkoutPage.errorMessage).toHaveText(error);
+  test.describe('billing address step', () => {
+    test.beforeEach(async ({ checkoutPage, seedCart, inStockProducts: [product] }) => {
+      await seedCart([{ product, quantity: 1 }]);
+      await checkoutPage.goto();
+      await checkoutPage.proceedFromCart.click();
     });
-  }
+
+    test('a state is required to continue', { tag: '@regression' }, async ({ checkoutPage }) => {
+      await checkoutPage.openAddressStep();
+
+      await checkoutPage.stateInput.clear();
+      await expect(checkoutPage.proceedFromAddress).toBeDisabled();
+
+      await checkoutPage.stateInput.fill('New York');
+      await expect(checkoutPage.proceedFromAddress).toBeEnabled();
+    });
+
+    // KNOWN BUG: if the server rejects an order (here simulated by intercepting the
+    // request and returning a validation error), the page silently stays on "Confirm"
+    // with no message, so the customer doesn't know their order failed.
+    test('a rejected order shows the customer an error', { tag: ['@regression', '@known-bug'] }, async ({ page, checkoutPage }) => {
+      test.fail(true, 'Site bug: a rejected order shows no error message');
+      await checkoutPage.openAddressStep();
+      await page.route('**/invoices', route => route.request().method() === 'POST'
+        ? route.fulfill({ status: 422, json: { billing_state: ['The billing state field must be a string.'] } })
+        : route.continue());
+
+      await checkoutPage.proceedFromAddress.click();
+      await checkoutPage.pay('cash-on-delivery');
+
+      await expect(page.getByRole('alert').filter({ hasText: /order|error|failed|could not/i })).toBeVisible();
+    });
+  });
 });

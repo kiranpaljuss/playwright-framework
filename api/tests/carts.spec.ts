@@ -1,54 +1,73 @@
-import { test, expect } from '../fixtures';
-import { Cart, CartSchema } from '../schemas';
+import { test as base, expect } from '../fixtures';
+import { CartSchema, MessageSchema, Product, ProductPageSchema } from '../schemas';
 
-/** Checks that every total in a cart is consistent with its line items. */
-const expectTotalsToAddUp = (cart: Cart): void => {
-  for (const item of cart.products) {
-    expect(item.total, `line total for product ${item.id}`).toBeCloseTo(item.price * item.quantity, 2);
+// Every cart test starts with a new, empty cart and two in-stock products to put in it.
+const test = base.extend<{ cartId: string; products: [Product, Product] }>({
+  cartId: async ({ cartsApi }, use) => {
+    const response = await cartsApi.create();
+    expect(response.status()).toBe(201);
+    await use((await response.json()).id);
+  },
+  products: async ({ productsApi }, use) => {
+    const { data } = ProductPageSchema.parse(await (await productsApi.list()).json());
+    const inStock = data.filter(p => p.in_stock);
+    await use([inStock[0], inStock[1]]);
   }
-  expect(cart.totalProducts).toBe(cart.products.length);
-  expect(cart.totalQuantity).toBe(cart.products.reduce((sum, item) => sum + item.quantity, 0));
-  expect(cart.total).toBeCloseTo(cart.products.reduce((sum, item) => sum + item.total, 0), 2);
-  expect(cart.discountedTotal).toBeLessThanOrEqual(cart.total);
-};
+});
 
 test.describe('Carts API', { tag: ['@api', '@carts'] }, () => {
-  test('get a cart with consistent totals', { tag: '@smoke' }, async ({ cartsApi }) => {
-    const response = await cartsApi.get(1);
+  test('add products to a cart', { tag: '@smoke' }, async ({ cartsApi, cartId, products: [first, second] }) => {
+    expect((await cartsApi.addItem(cartId, first.id, 2)).status()).toBe(200);
+    expect((await cartsApi.addItem(cartId, second.id, 1)).status()).toBe(200);
 
-    expect(response.status()).toBe(200);
-    expectTotalsToAddUp(CartSchema.parse(await response.json()));
+    const cart = CartSchema.parse(await (await cartsApi.get(cartId)).json());
+
+    expect(cart.cart_items.map(({ product_id, quantity }) => ({ product_id, quantity }))).toEqual([
+      { product_id: first.id, quantity: 2 },
+      { product_id: second.id, quantity: 1 }
+    ]);
+    expect(cart.cart_items[0].product).toMatchObject({ name: first.name, price: first.price });
   });
 
-  test('create a cart and calculate its totals', { tag: '@regression' }, async ({ cartsApi }) => {
-    const items = [{ id: 1, quantity: 2 }, { id: 5, quantity: 1 }];
+  test('change the quantity of a product', { tag: '@regression' }, async ({ cartsApi, cartId, products: [product] }) => {
+    await cartsApi.addItem(cartId, product.id, 1);
 
-    const response = await cartsApi.add(1, items);
+    expect((await cartsApi.updateQuantity(cartId, product.id, 5)).status()).toBe(200);
 
-    expect(response.status()).toBe(201);
-    const cart = CartSchema.parse(await response.json());
-    expect(cart.userId).toBe(1);
-    expect(cart.products.map(({ id, quantity }) => ({ id, quantity }))).toEqual(items);
-    expectTotalsToAddUp(cart);
+    const cart = CartSchema.parse(await (await cartsApi.get(cartId)).json());
+    expect(cart.cart_items).toEqual([expect.objectContaining({ product_id: product.id, quantity: 5 })]);
   });
 
-  test('merging a product into an existing cart adds it', { tag: '@regression' }, async ({ cartsApi }) => {
-    const original = CartSchema.parse(await (await cartsApi.get(1)).json());
-    const newItem = { id: 1, quantity: 1 };
+  test('remove a product from a cart', { tag: '@regression' }, async ({ cartsApi, cartId, products: [first, second] }) => {
+    await cartsApi.addItem(cartId, first.id, 1);
+    await cartsApi.addItem(cartId, second.id, 1);
 
-    const response = await cartsApi.update(1, [newItem]);
+    expect((await cartsApi.removeItem(cartId, first.id)).status()).toBe(204);
 
-    expect(response.status()).toBe(200);
-    const updated = CartSchema.parse(await response.json());
-    expect(updated.totalProducts).toBe(original.totalProducts + 1);
-    expect(updated.products).toContainEqual(expect.objectContaining(newItem));
-    expectTotalsToAddUp(updated);
+    const cart = CartSchema.parse(await (await cartsApi.get(cartId)).json());
+    expect(cart.cart_items.map(item => item.product_id)).toEqual([second.id]);
   });
 
-  test('delete a cart', { tag: '@regression' }, async ({ cartsApi }) => {
-    const response = await cartsApi.delete(1);
+  const invalidItems = [
+    { reason: 'a quantity of zero', productId: (p: Product) => p.id, quantity: 0, field: 'quantity', error: 'The quantity field must be at least 1.' },
+    { reason: 'an unknown product', productId: () => 'unknown-product', quantity: 1, field: 'product_id', error: 'The selected product id is invalid.' }
+  ];
 
-    expect(response.status()).toBe(200);
-    expect(await response.json()).toMatchObject({ id: 1, isDeleted: true });
+  for (const { reason, productId, quantity, field, error } of invalidItems) {
+    test(`adding an item is rejected with ${reason}`, { tag: '@regression' }, async ({ cartsApi, cartId, products: [product] }) => {
+      const response = await cartsApi.addItem(cartId, productId(product), quantity);
+
+      expect(response.status()).toBe(422);
+      expect((await response.json()).errors[field]).toEqual([error]);
+    });
+  }
+
+  test('a deleted cart can no longer be found', { tag: '@regression' }, async ({ cartsApi, cartId }) => {
+    expect((await cartsApi.delete(cartId)).status()).toBe(204);
+
+    const response = await cartsApi.get(cartId);
+
+    expect(response.status()).toBe(404);
+    expect(MessageSchema.parse(await response.json()).message).toBe('Requested item not found');
   });
 });

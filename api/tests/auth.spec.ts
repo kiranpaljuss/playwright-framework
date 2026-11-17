@@ -1,40 +1,58 @@
 import { test, expect } from '../fixtures';
-import { ErrorSchema, LoginResponseSchema, UserSchema } from '../schemas';
+import { CustomerSchema, FieldErrorsSchema, LoginResponseSchema, MessageSchema } from '../schemas';
+import { newCustomer } from '../testData';
 
 test.describe('Auth API', { tag: ['@api', '@auth'] }, () => {
-  test('login returns tokens and the user profile', { tag: '@smoke' }, async ({ authApi, apiUser }) => {
-    const response = await authApi.login(apiUser);
+  test('register a new customer', { tag: '@smoke' }, async ({ authApi }) => {
+    const customer = newCustomer();
+
+    const response = await authApi.register(customer);
+
+    expect(response.status()).toBe(201);
+    const body = CustomerSchema.parse(await response.json());
+    expect(body).toMatchObject({ email: customer.email, first_name: customer.first_name, last_name: customer.last_name });
+    expect(body).not.toHaveProperty('password');
+  });
+
+  test('registration reports every missing required field', { tag: '@regression' }, async ({ authApi }) => {
+    const response = await authApi.register({ email: newCustomer().email });
+
+    expect(response.status()).toBe(422);
+    const errors = FieldErrorsSchema.parse(await response.json());
+    expect(Object.keys(errors)).toEqual(expect.arrayContaining(['first_name', 'last_name', 'password']));
+  });
+
+  test('an email address can only be registered once', { tag: '@regression' }, async ({ authApi, customer }) => {
+    const response = await authApi.register(newCustomer({ email: customer.email }));
+
+    expect(response.status()).toBe(409);
+    expect(FieldErrorsSchema.parse(await response.json()).email).toContain('A customer with this email address already exists.');
+  });
+
+  test('login returns a bearer token', { tag: '@smoke' }, async ({ authApi, customer }) => {
+    const response = await authApi.login(customer.email, customer.password);
 
     expect(response.status()).toBe(200);
-    const body = LoginResponseSchema.parse(await response.json());
-    expect(body.username).toBe(apiUser.username);
+    expect(LoginResponseSchema.parse(await response.json()).expires_in).toBeGreaterThan(0);
   });
 
-  test('an access token identifies the logged-in user', async ({ authApi, apiUser, accessToken }) => {
-    const response = await authApi.currentUser(accessToken);
+  test('login is rejected with a wrong password', { tag: '@regression' }, async ({ authApi, customer }) => {
+    const response = await authApi.login(customer.email, 'Wrong-Password-1!');
+
+    expect(response.status()).toBe(401);
+  });
+
+  test('a token identifies the logged-in customer', { tag: '@regression' }, async ({ authApi, customer, customerToken }) => {
+    const response = await authApi.me(customerToken);
 
     expect(response.status()).toBe(200);
-    expect(UserSchema.parse(await response.json()).username).toBe(apiUser.username);
+    expect(CustomerSchema.parse(await response.json()).email).toBe(customer.email);
   });
 
-  test('login is rejected with a wrong password', { tag: '@regression' }, async ({ authApi, apiUser }) => {
-    const response = await authApi.login({ username: apiUser.username, password: 'wrong-password' });
+  test('profile request is rejected without a token', { tag: '@regression' }, async ({ authApi }) => {
+    const response = await authApi.me();
 
-    expect(response.status()).toBe(400);
-    expect(ErrorSchema.parse(await response.json()).message).toBe('Invalid credentials');
+    expect(response.status()).toBe(401);
+    expect(MessageSchema.parse(await response.json()).message).toBe('Unauthorized');
   });
-
-  const unauthorised = [
-    { reason: 'no token', token: undefined, message: 'Access Token is required' },
-    { reason: 'an invalid token', token: 'not-a-real-token', message: 'Invalid/Expired Token!' }
-  ];
-
-  for (const { reason, token, message } of unauthorised) {
-    test(`profile request is rejected with ${reason}`, { tag: '@regression' }, async ({ authApi }) => {
-      const response = await authApi.currentUser(token);
-
-      expect(response.status()).toBe(401);
-      expect(ErrorSchema.parse(await response.json()).message).toBe(message);
-    });
-  }
 });

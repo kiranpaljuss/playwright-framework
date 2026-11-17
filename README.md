@@ -3,55 +3,62 @@
 [![CI](https://github.com/kiranpaljuss/playwright-framework/actions/workflows/ci.yml/badge.svg)](https://github.com/kiranpaljuss/playwright-framework/actions/workflows/ci.yml)
 [![Test report](https://img.shields.io/badge/test%20report-GitHub%20Pages-blue)](https://kiranpaljuss.github.io/playwright-framework/)
 
-A test automation framework built with **Playwright** and **TypeScript**, covering three kinds of testing:
+A test automation framework built with **Playwright** and **TypeScript** for [Practice Software Testing](https://practicesoftwaretesting.com), a demo tool shop with both a website and a REST API. It covers:
 
-- **UI tests** for the [SauceDemo](https://www.saucedemo.com) e-commerce site, in Chromium, Firefox and WebKit
-- **API tests** for the [DummyJSON](https://dummyjson.com) REST API, with response contract validation
-- **Accessibility tests** that scan every key page against WCAG 2.2 AA with [axe-core](https://github.com/dequelabs/axe-core)
+- **UI tests** in Chromium, Firefox and WebKit
+- **API tests** with response contract validation
+- **Combined UI + API tests** that use the API to set up data and to verify what the website did
+- **Accessibility tests** against WCAG 2.2 AA with [axe-core](https://github.com/dequelabs/axe-core)
 
 **[View the latest test report →](https://kiranpaljuss.github.io/playwright-framework/)**
 
 ## What's covered
 
-**UI** — 18 tests × 3 browsers
+**UI**: 18 tests × 3 browsers
 
 | Area | Tests |
 | --- | --- |
-| [Login](e2e/tests/login.spec.ts) | Successful login, locked-out user, invalid credentials (data-driven), logout |
-| [Cart](e2e/tests/cart.spec.ts) | Add multiple items, remove from cart and inventory, continue shopping |
-| [Sorting](e2e/tests/sorting.spec.ts) | All four sort options, verified against the rendered data |
-| [Checkout](e2e/tests/checkout.spec.ts) | Full purchase journey with price/tax/total verification, form validation |
+| [Authentication](e2e/tests/auth.spec.ts) | Log in, wrong password, register on the website (verified via the API), sign out |
+| [Catalogue](e2e/tests/catalogue.spec.ts) | Search, all four sort orders, category filter and product details, each checked against the API |
+| [Cart](e2e/tests/cart.spec.ts) | Add with a quantity, a basket built via the API, quantity changes saved on the server, remove |
+| [Checkout](e2e/tests/checkout.spec.ts) | Full order with the invoice verified via the API, address validation, a known bug |
 
-**API** — 18 tests
-
-| Area | Tests |
-| --- | --- |
-| [Auth](api/tests/auth.spec.ts) | Login, token-based access, wrong password, missing/invalid token |
-| [Products](api/tests/products.spec.ts) | Get by ID, 404s, pagination, field selection, search, category filter, create/update/delete |
-| [Carts](api/tests/carts.spec.ts) | Totals consistency, create, merge items into a cart, delete |
-
-**Accessibility** — 7 tests
+**API**: 22 tests
 
 | Area | Tests |
 | --- | --- |
-| [Accessibility](e2e/tests/accessibility.spec.ts) | axe scans of login (including its error state), inventory, cart and checkout pages; keyboard-only login |
+| [Auth](api/tests/auth.spec.ts) | Register, validation errors, duplicate email (409), login, token access, 401s |
+| [Products](api/tests/products.spec.ts) | Pagination, get by ID, 404, search, sorting, price/brand/category filters |
+| [Carts](api/tests/carts.spec.ts) | Add items, change quantity, remove, validation errors, delete |
+
+**Accessibility**: 7 tests
+
+| Area | Tests |
+| --- | --- |
+| [Accessibility](e2e/tests/accessibility.spec.ts) | axe scans of six key pages against a known-issue baseline; keyboard-only login |
 
 Everything runs on every push, on pull requests and nightly.
 
 ## Design decisions
 
-- **Log in once, reuse the session.** A [setup project](e2e/auth.setup.ts) logs in through the UI and saves the session. Every test then starts already authenticated, so only the login tests use the login form. This keeps the suite fast without skipping real coverage.
-- **Page objects provided as fixtures.** Each page object ([`e2e/pages`](e2e/pages)) is injected through [Playwright fixtures](e2e/fixtures.ts). Every test gets isolated instances, with no shared mutable state, so `fullyParallel` is safe.
-- **Component composition.** The site header (cart badge, menu, logout) is a reusable [`Header`](e2e/pages/components/header.ts) component composed into the pages that display it.
-- **Resilient locators.** Locators use `data-test` attributes and accessible roles (`getByRole('button', { name: 'Add to cart' })`), never CSS paths or IDs derived from product names.
-- **Web-first assertions only.** Assertions like `toHaveText([...])` retry until the UI settles, so there are no hard waits and no flaky "read once, then compare" checks.
-- **Calculated expectations, not hard-coded ones.** Sorting and checkout totals are checked by computing the expected result from the page's own data, so the tests survive catalogue and price changes.
-- **Data-driven tests and tags.** Variations such as invalid logins and missing checkout fields are generated from data tables. Tests are tagged by area (`@login`, `@cart` …) and level (`@smoke`, `@regression`) so subsets can be run on demand.
-- **API clients mirror page objects.** [API clients](api/clients.ts) wrap each area of the API, the same way page objects wrap pages, and are injected as fixtures. They return raw responses so tests can assert on status codes and headers, not just bodies.
-- **Contract validation.** Every API response is parsed against a [zod schema](api/schemas.ts), so a missing field or a wrong type fails the test even when the test doesn't check that field directly.
-- **Shared API login.** A worker-scoped fixture logs in to the API once per worker and shares the token, rather than logging in for every test.
-- **Accessibility with known issues tracked.** Scans fail on any WCAG 2.2 A/AA violation. The site has a few existing best-practice issues we can't fix (it's third party), so they're [listed as known issues](e2e/fixtures.ts) with explanations. They stay documented, and anything new still fails the build. Full scan results are attached to each test in the report.
-- **Config via environment.** Credentials and `BASE_URL` come from environment variables, with safe defaults in `.env.template`, so the same suite can target another environment without code changes.
+- **The API sets up, the UI tests, the API verifies.** UI tests use the API for anything that isn't the behaviour under test. Accounts are registered and logged in through the API, and baskets are created through the API and handed to the browser. Results are then checked on the server: for example, the [checkout test](e2e/tests/checkout.spec.ts) places an order on the website, then confirms the API has a matching invoice with the right total and items. This makes tests faster and more reliable, and proves the website really did what it showed.
+- **Fresh accounts, no shared state.** The site's public demo logins can be changed by anyone, so each test worker [registers its own customer](api/fixtures.ts). Each test logs in through the API, because tokens only last five minutes.
+- **Signed in by default, without the login form.** The login token is placed in the browser's storage before the page loads, the same place the site keeps it, so tests start signed in. The login form has its own dedicated tests.
+- **Page objects and API clients as fixtures.** [Page objects](e2e/pages) and [API clients](api/clients.ts) are injected through Playwright fixtures. The [UI fixtures](e2e/fixtures.ts) build on the [API fixtures](api/fixtures.ts), so every UI test can use the API too.
+- **Contract validation.** Every API response is parsed against a [zod schema](api/schemas.ts), so a missing field or wrong type fails a test even when that test doesn't check the field directly. This caught a real inconsistency: search results leave out a field the main product list includes.
+- **Expectations from data, not hard-coded.** Products, prices and sort orders come from the API at runtime, so tests survive catalogue changes.
+- **Web-first assertions, no hard waits.** Assertions retry until the UI settles. Where the site has a genuine race (see below), the test waits for that specific condition and explains why.
+- **Accessibility baseline.** The site already has accessibility issues. Rather than switching rules off site-wide, each page [lists its known issues](e2e/tests/accessibility.spec.ts), and a scan fails on any new one. Known issues are noted on every run, and the full scan results are attached to the report.
+- **Known bugs are tests too.** A confirmed bug gets a test marked as expected to fail. It passes while the bug exists, and Playwright reports it as soon as the bug is fixed, as a prompt to update the test.
+
+## Bugs found
+
+Writing these tests uncovered real defects in the site:
+
+1. **Checkout overwrites the customer's saved address.** When the billing address step opens, a postcode lookup replaces the saved street and city with made-up values. For UK addresses it also clears the required state field, which blocks checkout. It's a race between two background requests, so it happens intermittently. The tests use US customers to avoid it, and [`checkoutPage.ts`](e2e/pages/checkoutPage.ts) explains the workaround.
+2. **A rejected order fails silently.** If the server rejects an order, the page stays on "Confirm" with no error message. Documented by an expected-to-fail test in [`checkout.spec.ts`](e2e/tests/checkout.spec.ts) that simulates the rejection with network mocking.
+3. **Accessibility failures**, including buttons with no accessible name, invalid list markup, and touch targets that are too small. Listed per page in [`accessibility.spec.ts`](e2e/tests/accessibility.spec.ts).
+4. **Inconsistent API contract.** Product search results omit the category `slug` that the product list includes.
 
 ## Tech stack
 
@@ -60,18 +67,17 @@ Playwright · TypeScript (strict) · axe-core · zod · ESLint (typescript-eslin
 ## Project structure
 
 ```
-e2e/                   # UI and accessibility tests (SauceDemo)
-├── tests/             # Test specs, one per area of the site
-├── pages/             # Page objects
-│   └── components/    # Reusable UI components shared across pages
-├── auth.setup.ts      # Logs in once and saves the session for all tests
-├── fixtures.ts        # Page object and accessibility-scan fixtures
-└── users.ts           # User personas → credentials (from env)
-api/                   # API tests (DummyJSON)
-├── tests/             # Test specs, one per API area
+api/                   # API layer, shared by the API and UI tests
+├── tests/             # API test specs
 ├── clients.ts         # API clients (the API equivalent of page objects)
 ├── schemas.ts         # Response contracts (zod)
-└── fixtures.ts        # API client and shared-token fixtures
+├── testData.ts        # Builds unique test customers
+└── fixtures.ts        # API clients, per-worker customer and login token
+e2e/                   # UI and accessibility tests
+├── tests/             # UI test specs
+├── pages/             # Page objects
+│   └── components/    # Shared UI components (header)
+└── fixtures.ts        # Page objects, API-seeded baskets, signed-in state, axe
 .github/
 ├── workflows/ci.yml   # Lint, typecheck, test matrix (API + 3 browsers), merged report publishing
 └── dependabot.yml     # Weekly dependency and GitHub Actions updates
@@ -79,13 +85,12 @@ api/                   # API tests (DummyJSON)
 
 ## Getting started
 
-Prerequisites: Node.js 24 (see [`.nvmrc`](.nvmrc)) and Yarn 1.
+Prerequisites: Node.js 24 (see [`.nvmrc`](.nvmrc)) and Yarn 1. No credentials needed: tests create their own accounts.
 
 ```bash
 nvm use
 yarn install
 npx playwright install --with-deps
-cp .env.template .env   # optional; defaults are SauceDemo's public demo credentials
 yarn test
 ```
 
@@ -106,7 +111,7 @@ yarn test
 
 ## Reports and debugging
 
-The Playwright HTML report (`playwright-report/`) includes screenshots, video and a full trace for any failed test. Open a trace with `npx playwright show-trace <trace.zip>`.
+The Playwright HTML report (`playwright-report/`) includes screenshots, video and a full trace for any failed test, with every network request. Open a trace with `npx playwright show-trace <trace.zip>`.
 
 In CI, the API and browser jobs run in parallel, and their results are merged into a single HTML report. That report is uploaded as a build artifact, and the latest `main` run is published to [GitHub Pages](https://kiranpaljuss.github.io/playwright-framework/).
 
@@ -114,5 +119,6 @@ In CI, the API and browser jobs run in parallel, and their results are merged in
 
 1. Add a test to the matching file in `e2e/tests/` (UI) or `api/tests/` (API), or create a new `*.spec.ts` file. Import `test` and `expect` from that folder's `fixtures.ts`.
 2. Put selectors and page interactions in a page object, or API calls in a client, and expose new ones as fixtures. Add a zod schema for any new API response.
-3. Tag the test (`@smoke` or `@regression`, plus its area).
-4. Run `yarn test:chromium` (or `yarn test:api`) and `yarn validate`.
+3. Prefer the API for test setup and for verifying results. Use the UI for the behaviour being tested.
+4. Tag the test (`@smoke` or `@regression`, plus its area).
+5. Run `yarn test:chromium` (or `yarn test:api`) and `yarn validate`.
