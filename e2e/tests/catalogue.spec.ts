@@ -50,10 +50,10 @@ test.describe('Product catalogue', { tag: '@catalogue' }, () => {
   });
 
   test('product page shows the same details as the API', { tag: '@regression' }, async ({ homePage, productPage, productsApi }) => {
-    const name = (await homePage.productNames.first().textContent())!.trim();
-    const [summary] = ProductPageSchema.parse(await (await productsApi.list()).json()).data;
-    const product = ProductSchema.parse(await (await productsApi.get(summary.id)).json());
-    expect(name).toBe(product.name);
+    // Pick a product the catalogue page is showing, using the same filters it applies,
+    // rather than assuming the page and the API list products in the same order.
+    const { data } = ProductPageSchema.parse(await (await productsApi.list(CATALOGUE_DEFAULT_FILTERS)).json());
+    const product = ProductSchema.parse(await (await productsApi.get(data[data.length - 1].id)).json());
 
     await homePage.openProduct(product.name);
 
