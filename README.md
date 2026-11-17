@@ -37,7 +37,7 @@ A test automation framework built with **Playwright** and **TypeScript** for [Pr
 | --- | --- |
 | [Accessibility](e2e/tests/accessibility.spec.ts) | axe scans of six key pages against a known-issue baseline; keyboard-only login |
 
-Everything runs on every push, on pull requests and nightly.
+Everything runs on every push, on pull requests and nightly. CI runs against a private copy of the shop started in Docker (see [Test environments](#test-environments)).
 
 ## Design decisions
 
@@ -49,6 +49,7 @@ Everything runs on every push, on pull requests and nightly.
 - **Expectations from data, not hard-coded.** Products, prices and sort orders come from the API at runtime, so tests survive catalogue changes.
 - **Web-first assertions, no hard waits.** Assertions retry until the UI settles. Where the site has a genuine race (see below), the test waits for that specific condition and explains why.
 - **Accessibility baseline.** The site already has accessibility issues. Rather than switching rules off site-wide, each page [lists its known issues](e2e/tests/accessibility.spec.ts), and a scan fails on any new one. Known issues are noted on every run, and the full scan results are attached to the report.
+- **CI owns its test environment.** CI starts its own copy of the shop from the project's published Docker images and loads fresh demo data for every run. Tests don't depend on a shared public server being up, and they leave nothing behind on it.
 - **Known bugs are tests too.** A confirmed bug gets a test marked as expected to fail. It passes while the bug exists, and Playwright reports it as soon as the bug is fixed, as a prompt to update the test.
 
 ## Bugs found
@@ -62,7 +63,7 @@ Writing these tests uncovered real defects in the site:
 
 ## Tech stack
 
-Playwright · TypeScript (strict) · axe-core · zod · ESLint (typescript-eslint + eslint-plugin-playwright) · GitHub Actions · GitHub Pages · Dependabot
+Playwright · TypeScript (strict) · axe-core · zod · Docker · ESLint (typescript-eslint + eslint-plugin-playwright) · GitHub Actions · GitHub Pages · Dependabot
 
 ## Project structure
 
@@ -78,6 +79,7 @@ e2e/                   # UI and accessibility tests
 ├── pages/             # Page objects
 │   └── components/    # Shared UI components (header)
 └── fixtures.ts        # Page objects, API-seeded baskets, signed-in state, axe
+shop/                  # Docker setup for a private copy of the shop (used by CI)
 .github/
 ├── workflows/ci.yml   # Lint, typecheck, test matrix (API + 3 browsers), merged report publishing
 └── dependabot.yml     # Weekly dependency and GitHub Actions updates
@@ -94,6 +96,15 @@ npx playwright install --with-deps
 yarn test
 ```
 
+## Test environments
+
+| Environment | When | How |
+| --- | --- | --- |
+| Live site ([practicesoftwaretesting.com](https://practicesoftwaretesting.com)) | Default for local runs | `yarn test` |
+| Private copy in Docker | CI, or locally with Docker installed | `yarn shop:up`, then `yarn test:local` (`yarn shop:down` to stop) |
+
+CI can't use the live site: its bot protection (Cloudflare) blocks requests from CI servers with a "verify you are human" check. Rather than trying to get around that, CI starts the shop from the project's [published Docker images](https://github.com/testsmith-io/practice-software-testing) (pinned to version 2.5) with fresh demo data. The URLs are set by `BASE_URL` and `API_BASE_URL` (see [`.env.template`](.env.template)).
+
 ## Commands
 
 | Command | Description |
@@ -102,6 +113,8 @@ yarn test
 | `yarn test:chromium` | Run UI and accessibility tests in Chromium only |
 | `yarn test:api` | Run the API tests |
 | `yarn test:a11y` | Run the accessibility tests |
+| `yarn shop:up` / `yarn shop:down` | Start or stop a local copy of the shop in Docker |
+| `yarn test:local` | Run everything against the local copy |
 | `yarn test:smoke` | Run only `@smoke` tests |
 | `yarn test:grep "@checkout"` | Run tests matching a tag or name |
 | `yarn test:headed` | Run in a visible browser (Chromium) |
