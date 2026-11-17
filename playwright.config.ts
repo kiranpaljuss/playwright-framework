@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
-import { defineBddConfig } from 'playwright-bdd';
 import dotenv from 'dotenv';
+import { STANDARD_USER_STATE } from './e2e/users';
 
 // .env.template holds safe defaults (SauceDemo's public demo credentials); a local .env overrides them.
 dotenv.config({ path: '.env.template', quiet: true });
@@ -8,25 +8,23 @@ dotenv.config({ path: '.env', override: true, quiet: true });
 
 const isCI = !!process.env.CI;
 
-const testDir = defineBddConfig({
-  features: 'e2e/features/**/*.feature',
-  steps: ['e2e/steps/**/*.ts', 'e2e/support/fixtures.ts']
+// Every browser project starts from the session saved by auth.setup.ts.
+const browserProject = (name: string, device: string) => ({
+  name,
+  testDir: './e2e/tests',
+  dependencies: ['setup'],
+  use: { ...devices[device], storageState: STANDARD_USER_STATE }
 });
 
 export default defineConfig({
-  testDir,
+  testDir: './e2e',
   fullyParallel: true,
   forbidOnly: isCI,
   retries: isCI ? 2 : 0,
   workers: isCI ? 2 : undefined,
   reporter: [
     [isCI ? 'github' : 'list'],
-    ['html', { outputFolder: 'playwright-report', open: 'never' }],
-    ['playwright-bdd/reporter/cucumber', {
-      $type: 'json',
-      outputFile: 'cucumber-report/cucumber-report.json',
-      addMetadata: 'object'
-    }]
+    ['html', { outputFolder: 'playwright-report', open: 'never' }]
   ],
   use: {
     baseURL: process.env.BASE_URL || 'https://www.saucedemo.com',
@@ -36,8 +34,9 @@ export default defineConfig({
     video: 'retain-on-failure'
   },
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
-    { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
-    { name: 'webkit', use: { ...devices['Desktop Safari'] } }
+    { name: 'setup', testMatch: /auth\.setup\.ts/ },
+    browserProject('chromium', 'Desktop Chrome'),
+    browserProject('firefox', 'Desktop Firefox'),
+    browserProject('webkit', 'Desktop Safari')
   ]
 });

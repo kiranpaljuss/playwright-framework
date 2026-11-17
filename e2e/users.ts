@@ -1,7 +1,11 @@
 /**
- * Maps the user personas referenced in feature files to environment variables.
+ * Maps user personas to the environment variables holding their usernames.
  * Credentials are loaded from .env (falling back to .env.template) in playwright.config.ts.
  */
+
+/** Saved session for the standard user, written by auth.setup.ts and reused by the tests. */
+export const STANDARD_USER_STATE = '.auth/standard-user.json';
+
 const USER_ENV_KEYS = {
   standard: 'SAUCE_STANDARD_USER',
   'locked out': 'SAUCE_LOCKED_OUT_USER',

@@ -22,7 +22,7 @@ const styleRules = {
 
 export default tseslint.config(
   {
-    ignores: ['node_modules/**', '.features-gen/**', 'playwright-report/**', 'test-results/**', 'cucumber-report/**']
+    ignores: ['node_modules/**', 'playwright-report/**', 'test-results/**']
   },
   {
     files: ['**/*.{js,mjs,ts}'],
@@ -43,11 +43,7 @@ export default tseslint.config(
   },
   {
     files: ['e2e/**/*.ts'],
-    extends: [playwright.configs['flat/recommended']],
-    rules: {
-      // Step definitions are not inside test() blocks, so expect() calls are legitimately standalone.
-      'playwright/no-standalone-expect': 'off'
-    }
+    extends: [playwright.configs['flat/recommended']]
   },
   {
     files: ['**/*.{json,jsonc,json5}'],

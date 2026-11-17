@@ -2,21 +2,19 @@
   "name": "playwright-framework",
   "version": "1.0.0",
   "private": true,
-  "description": "BDD test automation framework built with Playwright, playwright-bdd and TypeScript",
+  "description": "End-to-end test automation framework built with Playwright and TypeScript",
   "license": "MIT",
   "engines": {
     "node": ">=24"
   },
   "scripts": {
-    "bddgen": "bddgen test",
-    "test": "bddgen test && playwright test",
-    "test:chromium": "bddgen test && playwright test --project=chromium",
-    "test:headed": "bddgen test && playwright test --project=chromium --headed",
-    "test:smoke": "bddgen test && playwright test --grep @smoke",
-    "test:grep": "bddgen test && playwright test --grep",
-    "test:ui": "bddgen test && playwright test --ui",
+    "test": "playwright test",
+    "test:chromium": "playwright test --project=chromium",
+    "test:headed": "playwright test --project=chromium --headed",
+    "test:smoke": "playwright test --grep @smoke",
+    "test:grep": "playwright test --grep",
+    "test:ui": "playwright test --ui",
     "report": "playwright show-report",
-    "report:cucumber": "node scripts/generate-cucumber-report.mjs",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc --noEmit",
@@ -32,8 +30,6 @@
     "eslint-plugin-playwright": "^2.10.4",
     "globals": "^17.0.0",
     "jsonc-eslint-parser": "^3.3.0",
-    "multiple-cucumber-html-reporter": "^4.0.0",
-    "playwright-bdd": "^9.2.1",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.61.0"
   }

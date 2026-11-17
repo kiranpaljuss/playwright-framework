@@ -1,15 +1,14 @@
 # Dependencies
 node_modules/
 
-# Generated tests and reports
-.features-gen/
+# Test output and reports
 test-results/
 playwright-report/
 blob-report/
-cucumber-report/
 
-# Local environment
+# Local environment and saved login sessions
 .env
+.auth/
 
 # OS / editor
 .DS_Store

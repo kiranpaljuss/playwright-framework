@@ -11,12 +11,16 @@ export class InventoryPage {
   readonly itemPrices: Locator;
   readonly sortDropdown: Locator;
 
-  constructor (page: Page) {
+  constructor (private readonly page: Page) {
     this.header = new Header(page);
     this.inventoryList = page.getByTestId('inventory-list');
     this.itemNames = page.getByTestId('inventory-item-name');
     this.itemPrices = page.getByTestId('inventory-item-price');
     this.sortDropdown = page.getByTestId('product-sort-container');
+  }
+
+  async goto (): Promise<void> {
+    await this.page.goto('/inventory.html');
   }
 
   /** A single product card, located by its visible name rather than a generated test id. */

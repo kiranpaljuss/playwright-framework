@@ -44,39 +44,11 @@
     "editor.bracketPairColorization.enabled": true,
     "editor.guides.bracketPairs": "active",
     "editor.guides.indentation": false,
-    "cucumberautocomplete.smartSnippets": true,
-    "cucumberautocomplete.steps": [
-      "e2e/steps/**/*.ts"
-    ],
-    "cucumberautocomplete.syncfeatures": "e2e/features/**/*.feature",
-    "cucumberautocomplete.strictGherkinCompletion": false,
-    "cucumberautocomplete.strictGherkinValidation": false,
-    "cucumberautocomplete.skipDocStringsFormat": false,
-    "cucumberautocomplete.onTypeFormat": true,
-    "cucumber.features": [
-      "e2e/features/**/*.feature"
-    ],
-    "cucumber.glue": [
-      "e2e/steps/**/*.ts"
-    ],
     "editor.quickSuggestions": {
       "comments": false,
       "strings": true,
       "other": true
     },
-    "conf.view.indentSymbol": "space",
-    "conf.view.identsBefore.Feature": 0,
-    "conf.view.identsBefore.Scenario": 2,
-    "conf.view.identsBefore.Background": 2,
-    "conf.view.identsBefore.ScenarioOutline": 2,
-    "conf.view.identsBefore.Given": 4,
-    "conf.view.identsBefore.When": 4,
-    "conf.view.identsBefore.Then": 4,
-    "conf.view.identsBefore.And": 4,
-    "conf.view.identsBefore.Tag": "relative",
-    "conf.view.identsBefore.Table": 6,
-    "conf.view.identsBefore.Examples": 4,
-    "conf.view.table.autoformat": true,
     "cSpell.ignoreWords": [],
     "git.ignoreLimitWarning": true,
     "[json]": {
@@ -85,10 +57,9 @@
   },
   "extensions": {
     "recommendations": [
+      "ms-playwright.playwright",
       "streetsidesoftware.code-spell-checker",
-      "alexkrechik.cucumberautocomplete",
       "dbaeumer.vscode-eslint",
-      "siarheikuchuk.gherkin-beautifier-vs-code-plugin",
       "eg2.vscode-npm-script",
       "christian-kohler.npm-intellisense",
       "techer.open-in-browser",
