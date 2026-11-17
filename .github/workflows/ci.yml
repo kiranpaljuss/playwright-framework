@@ -42,7 +42,8 @@ jobs:
           node-version-file: .nvmrc
           cache: yarn
       - run: yarn install --frozen-lockfile
-      - run: npx playwright install --with-deps ${{ matrix.browser }}
+      # The login setup project always runs in Chromium, so install it alongside the matrix browser.
+      - run: npx playwright install --with-deps chromium ${{ matrix.browser }}
       - run: npx playwright test --project=${{ matrix.browser }}
       - name: Upload report
         if: ${{ !cancelled() }}
