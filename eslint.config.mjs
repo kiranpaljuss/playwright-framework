@@ -25,7 +25,7 @@ export default tseslint.config(
     ignores: ['node_modules/**', 'playwright-report/**', 'test-results/**']
   },
   {
-    files: ['**/*.{js,mjs,ts}'],
+    files: ['**/*.{js,mjs,ts,mts}'],
     extends: [js.configs.recommended],
     languageOptions: {
       ecmaVersion: 'latest',
@@ -35,7 +35,7 @@ export default tseslint.config(
     rules: styleRules
   },
   {
-    files: ['**/*.ts'],
+    files: ['**/*.{ts,mts}'],
     extends: [tseslint.configs.recommended],
     rules: {
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }]
