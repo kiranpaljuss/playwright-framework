@@ -82,6 +82,8 @@ e2e/                   # UI and accessibility tests
 │   └── components/    # Shared UI components (header)
 └── fixtures.ts        # Page objects, API-seeded baskets, signed-in state, axe
 shop/                  # Docker setup for a private copy of the shop (used by CI)
+scripts/
+└── writeJobSummary.mts # Test results summary shown on each CI run page
 .github/
 ├── workflows/ci.yml   # Lint, typecheck, test matrix (API + 3 browsers), merged report publishing
 └── dependabot.yml     # Weekly dependency and GitHub Actions updates
