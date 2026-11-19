@@ -12,6 +12,8 @@ A test automation framework built with **Playwright** and **TypeScript** for [Pr
 
 **[View the latest test report →](https://kiranpaljuss.github.io/playwright-framework/)**
 
+[![Playwright HTML report: 83 of 83 tests passing, showing the checkout tests in Chromium, Firefox and WebKit, including a known-bug test](docs/images/test-report.png)](https://kiranpaljuss.github.io/playwright-framework/)
+
 > **See also:** [cypress-framework](https://github.com/kiranpaljuss/cypress-framework), my BDD framework built with Cypress, Cucumber and TypeScript.
 
 ## What's covered
